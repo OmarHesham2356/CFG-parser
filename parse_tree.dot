@@ -1,4 +1,0 @@
-digraph "ParseTree" {
-  node [shape=plain];
-  n543ed5f3 [label="S → ε"];
-}
