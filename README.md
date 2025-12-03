@@ -12,7 +12,7 @@ A parser that checks the balance of parenthesis.
 ### Parser Grammar
 
 $$
-S -> (S) | SS | \epsilon
+S \to (S) | SS | \epsilon
 $$
 
 ### Parser Output Example
@@ -41,4 +41,3 @@ parse_tree = {
 ### Example Visualization
 
 For the string `(())`:
-
