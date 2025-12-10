@@ -309,38 +309,38 @@ class FirstFollowComputer:
 # Example usage and validation
 # ============================================================================
 
-if __name__ == "__main__":
-    print("Testing FIRST/FOLLOW Set Computation")
-    print("=" * 70)
+# if __name__ == "__main__":
+#     print("Testing FIRST/FOLLOW Set Computation")
+#     print("=" * 70)
     
-    # Create example grammar: E → E + T | T
-    #                        T → T * F | F
-    #                        F → ( E ) | id
+#     # Create example grammar: E → E + T | T
+#     #                        T → T * F | F
+#     #                        F → ( E ) | id
     
-    productions = [
-        Production("E", ["E", "+", "T"], prod_id=1),
-        Production("E", ["T"], prod_id=2),
-        Production("T", ["T", "*", "F"], prod_id=3),
-        Production("T", ["F"], prod_id=4),
-        Production("F", ["(", "E", ")"], prod_id=5),
-        Production("F", ["id"], prod_id=6),
-    ]
+#     productions = [
+#         Production("E", ["E", "+", "T"], prod_id=1),
+#         Production("E", ["T"], prod_id=2),
+#         Production("T", ["T", "*", "F"], prod_id=3),
+#         Production("T", ["F"], prod_id=4),
+#         Production("F", ["(", "E", ")"], prod_id=5),
+#         Production("F", ["id"], prod_id=6),
+#     ]
     
-    grammar = Grammar(productions, "E")
-    print(grammar)
+#     grammar = Grammar(productions, "E")
+#     print(grammar)
     
-    # Compute FIRST and FOLLOW (auto_compute=True by default)
-    computer = FirstFollowComputer(grammar, auto_compute=True)
+#     # Compute FIRST and FOLLOW (auto_compute=True by default)
+#     computer = FirstFollowComputer(grammar, auto_compute=True)
     
-    print("\n" + "=" * 70)
-    computer.print_sets()
+#     print("\n" + "=" * 70)
+#     computer.print_sets()
     
-    # Test helper methods
-    print("\n" + "=" * 70)
-    print("Testing helper methods:")
-    print(f"FIRST(id) = {computer.first_of('id')}")
-    print(f"FIRST([T, *, F]) = {computer.first_of_sequence(['T', '*', 'F'])}")
-    print(f"FOLLOW(E) = {computer.follow_of('E')}")
+#     # Test helper methods
+#     print("\n" + "=" * 70)
+#     print("Testing helper methods:")
+#     print(f"FIRST(id) = {computer.first_of('id')}")
+#     print(f"FIRST([T, *, F]) = {computer.first_of_sequence(['T', '*', 'F'])}")
+#     print(f"FOLLOW(E) = {computer.follow_of('E')}")
     
-    print("\n" + "=" * 70)
-    print("FIRST/FOLLOW computation complete!")
+#     print("\n" + "=" * 70)
+#     print("FIRST/FOLLOW computation complete!")

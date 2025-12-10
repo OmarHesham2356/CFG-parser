@@ -192,10 +192,6 @@ class LR1Parser:
             
             if token == END_OF_INPUT:
                 return f"Token {i} cannot be END_OF_INPUT '{END_OF_INPUT}'"
-            
-            # Check if token is defined in grammar
-            if not self.grammar.is_terminal(token):
-                return f"Token '{token}' is not a terminal in the grammar"
         
         return None
     
@@ -273,61 +269,61 @@ class LR1Parser:
 # Example usage and validation
 # ============================================================================
 
-if __name__ == "__main__":
-    from phase2_first_follow import FirstFollowComputer
-    from phase3_lr1_items import LR1ItemSetBuilder
-    from phase4_lr1_table import LR1TableBuilder
+# if __name__ == "__main__":
+#     from phase2_first_follow import FirstFollowComputer
+#     from phase3_lr1_items import LR1ItemSetBuilder
+#     from phase4_lr1_table import LR1TableBuilder
     
-    print("Testing LR(1) Parser Engine")
-    print("=" * 80)
+#     print("Testing LR(1) Parser Engine")
+#     print("=" * 80)
     
-    # Create grammar: E → E + T | T, T → id
-    productions = [
-        Production("E", ["E", "+", "T"], prod_id=1),
-        Production("E", ["T"], prod_id=2),
-        Production("T", ["id"], prod_id=3),
-    ]
+#     # Create grammar: E → E + T | T, T → id
+#     productions = [
+#         Production("E", ["E", "+", "T"], prod_id=1),
+#         Production("E", ["T"], prod_id=2),
+#         Production("T", ["id"], prod_id=3),
+#     ]
     
-    grammar = Grammar(productions, "E")
-    print(grammar)
+#     grammar = Grammar(productions, "E")
+#     print(grammar)
     
-    # Build tables
-    ff = FirstFollowComputer(grammar)
-    ff.compute_first_sets()
-    ff.compute_follow_sets()
+#     # Build tables
+#     ff = FirstFollowComputer(grammar)
+#     ff.compute_first_sets()
+#     ff.compute_follow_sets()
     
-    item_builder = LR1ItemSetBuilder(grammar, ff)
-    item_sets, goto_table = item_builder.build()
+#     item_builder = LR1ItemSetBuilder(grammar, ff)
+#     item_sets, goto_table = item_builder.build()
     
-    table_builder = LR1TableBuilder(grammar, item_sets, goto_table)
-    action_table, goto_filled = table_builder.build()
+#     table_builder = LR1TableBuilder(grammar, item_sets, goto_table)
+#     action_table, goto_filled = table_builder.build()
     
-    # Create parser
-    parser = LR1Parser(grammar, action_table, goto_filled, verbose=True)
+#     # Create parser
+#     parser = LR1Parser(grammar, action_table, goto_filled, verbose=True)
     
-    # Test cases
-    test_inputs = [
-        ["id"],
-        ["id", "+", "id"],
-        ["id", "+", "id", "+", "id"],
-    ]
+#     # Test cases
+#     test_inputs = [
+#         ["id"],
+#         ["id", "+", "id"],
+#         ["id", "+", "id", "+", "id"],
+#     ]
     
-    for tokens in test_inputs:
-        print("\n" + "=" * 80)
-        print(f"Parsing: {' '.join(tokens)}")
-        print("-" * 80)
+#     for tokens in test_inputs:
+#         print("\n" + "=" * 80)
+#         print(f"Parsing: {' '.join(tokens)}")
+#         print("-" * 80)
         
-        tree, derivation, error = parser.parse(tokens)
+#         tree, derivation, error = parser.parse(tokens)
         
-        if error:
-            print(f"✗ Error: {error}")
-        else:
-            print(f"✓ Success!")
-            print("\nParse tree:")
-            tree.pretty_print()
-            print("\nDerivation:")
-            for step in derivation:
-                print(f"  {step}")
+#         if error:
+#             print(f"✗ Error: {error}")
+#         else:
+#             print(f"✓ Success!")
+#             print("\nParse tree:")
+#             tree.pretty_print()
+#             print("\nDerivation:")
+#             for step in derivation:
+#                 print(f"  {step}")
     
-    print("\n" + "=" * 80)
-    print("Parser testing complete!")
+#     print("\n" + "=" * 80)
+#     print("Parser testing complete!")

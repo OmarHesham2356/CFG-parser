@@ -189,6 +189,9 @@ class Grammar:
             for symbol in prod.rhs:
                 if symbol not in self.nonterminals:
                     self.terminals.add(symbol)
+        
+        # Add END_OF_INPUT as a terminal
+        self.terminals.add(END_OF_INPUT)
     
     def _validate(self):
         """Validate grammar consistency"""
@@ -293,52 +296,52 @@ class ParseTreeNode:
         return self.__repr__()
 
 
-# ============================================================================
-# Example usage and validation
-# ============================================================================
+# # ============================================================================
+# # Example usage and validation
+# # ============================================================================
 
-if __name__ == "__main__":
-    print("Testing Grammar Data Structures")
-    print("=" * 60)
+# if __name__ == "__main__":
+#     print("Testing Grammar Data Structures")
+#     print("=" * 60)
     
-    # Create example grammar: E → E + T | T
-    #                        T → T * F | F
-    #                        F → ( E ) | id
+#     # Create example grammar: E → E + T | T
+#     #                        T → T * F | F
+#     #                        F → ( E ) | id
     
-    productions = [
-        Production("E", ["E", "+", "T"], prod_id=1),
-        Production("E", ["T"], prod_id=2),
-        Production("T", ["T", "*", "F"], prod_id=3),
-        Production("T", ["F"], prod_id=4),
-        Production("F", ["(", "E", ")"], prod_id=5),
-        Production("F", ["id"], prod_id=6),
-    ]
+#     productions = [
+#         Production("E", ["E", "+", "T"], prod_id=1),
+#         Production("E", ["T"], prod_id=2),
+#         Production("T", ["T", "*", "F"], prod_id=3),
+#         Production("T", ["F"], prod_id=4),
+#         Production("F", ["(", "E", ")"], prod_id=5),
+#         Production("F", ["id"], prod_id=6),
+#     ]
     
-    grammar = Grammar(productions, "E")
-    print(grammar)
+#     grammar = Grammar(productions, "E")
+#     print(grammar)
     
-    print(f"Terminals: {sorted(grammar.terminals)}")
-    print(f"Nonterminals: {sorted(grammar.nonterminals)}")
-    print(f"Augmented start: {grammar.augmented_start}")
-    print(f"Augmented productions: {len(grammar.augmented_productions)} total")
+#     print(f"Terminals: {sorted(grammar.terminals)}")
+#     print(f"Nonterminals: {sorted(grammar.nonterminals)}")
+#     print(f"Augmented start: {grammar.augmented_start}")
+#     print(f"Augmented productions: {len(grammar.augmented_productions)} total")
     
-    # Test LR1Item
-    print("\nTesting LR1Item")
-    print("-" * 60)
-    prod = productions[0]  # E → E + T
-    item = LR1Item(prod, 1, "+")
-    print(f"Item: {item}")
-    print(f"Is complete: {item.is_complete()}")
-    print(f"Symbol after dot: {item.symbol_after_dot()}")
+#     # Test LR1Item
+#     print("\nTesting LR1Item")
+#     print("-" * 60)
+#     prod = productions[0]  # E → E + T
+#     item = LR1Item(prod, 1, "+")
+#     print(f"Item: {item}")
+#     print(f"Is complete: {item.is_complete()}")
+#     print(f"Symbol after dot: {item.symbol_after_dot()}")
     
-    # Test ParseTreeNode
-    print("\nTesting ParseTreeNode")
-    print("-" * 60)
-    # Build a small tree
-    leaf1 = ParseTreeNode("id")
-    leaf2 = ParseTreeNode("id")
-    f_node = ParseTreeNode("F", [leaf1], productions[5])
-    t_node = ParseTreeNode("T", [f_node], productions[3])
+#     # Test ParseTreeNode
+#     print("\nTesting ParseTreeNode")
+#     print("-" * 60)
+#     # Build a small tree
+#     leaf1 = ParseTreeNode("id")
+#     leaf2 = ParseTreeNode("id")
+#     f_node = ParseTreeNode("F", [leaf1], productions[5])
+#     t_node = ParseTreeNode("T", [f_node], productions[3])
     
-    print("Parse tree for: id")
-    t_node.pretty_print()
+#     print("Parse tree for: id")
+#     t_node.pretty_print()

@@ -10,6 +10,7 @@
 
 from typing import List, Set, Tuple, FrozenSet, Dict, Optional
 from phase1_grammar import Production, LR1Item, Grammar, EPSILON, END_OF_INPUT
+from phase2_first_follow import FirstFollowComputer
 
 
 class LR1ItemSetBuilder:
@@ -203,36 +204,36 @@ class LR1ItemSetBuilder:
 # Example usage and validation
 # ============================================================================
 
-if __name__ == "__main__":
-    from phase2_first_follow import FirstFollowComputer
+# if __name__ == "__main__":
+#     from phase2_first_follow import FirstFollowComputer
     
-    print("Testing LR(1) Item Set Construction")
-    print("=" * 70)
+#     print("Testing LR(1) Item Set Construction")
+#     print("=" * 70)
     
-    # Create simple grammar: E → E + T | T, T → id
-    productions = [
-        Production("E", ["E", "+", "T"], prod_id=1),
-        Production("E", ["T"], prod_id=2),
-        Production("T", ["id"], prod_id=3),
-    ]
+#     # Create simple grammar: E → E + T | T, T → id
+#     productions = [
+#         Production("E", ["E", "+", "T"], prod_id=1),
+#         Production("E", ["T"], prod_id=2),
+#         Production("T", ["id"], prod_id=3),
+#     ]
     
-    grammar = Grammar(productions, "E")
-    print(grammar)
+#     grammar = Grammar(productions, "E")
+#     print(grammar)
     
-    # Compute FIRST/FOLLOW
-    ff = FirstFollowComputer(grammar)
-    ff.compute_first_sets()
-    ff.compute_follow_sets()
+#     # Compute FIRST/FOLLOW
+#     ff = FirstFollowComputer(grammar)
+#     ff.compute_first_sets()
+#     ff.compute_follow_sets()
     
-    # Build item sets
-    builder = LR1ItemSetBuilder(grammar, ff)
-    item_sets, goto_table = builder.build()
+#     # Build item sets
+#     builder = LR1ItemSetBuilder(grammar, ff)
+#     item_sets, goto_table = builder.build()
     
-    print(f"\nTotal states: {len(item_sets)}")
-    print(f"Total GOTO entries: {len(goto_table)}")
+#     print(f"\nTotal states: {len(item_sets)}")
+#     print(f"Total GOTO entries: {len(goto_table)}")
     
-    builder.print_item_sets()
-    builder.print_goto_transitions()
+#     builder.print_item_sets()
+#     builder.print_goto_transitions()
     
-    print("\n" + "=" * 70)
-    print("Item set construction complete!")
+#     print("\n" + "=" * 70)
+#     print("Item set construction complete!")

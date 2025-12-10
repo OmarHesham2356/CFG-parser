@@ -1,7 +1,7 @@
 # ============================================================================
-# LR(1) Parser - Main Entry Point with Examples
+# LR(1) Parser - Main Entry Point
 # ============================================================================
-# This file demonstrates complete working parsers for 3 different grammars
+# User input based grammar parsing
 # ============================================================================
 
 from phase1_grammar import Production, Grammar
@@ -65,133 +65,106 @@ class LR1ParserBuilder:
             print(f"  ACTION entries: {len(action_table)}")
             print(f"  GOTO entries: {len(goto_filled)}")
             if self.table_builder.conflicts:
-                print(f"  ⚠ Conflicts: {len(self.table_builder.conflicts)}")
+                print(f"  ! Conflicts: {len(self.table_builder.conflicts)}")
             else:
-                print(f"  ✓ No conflicts")
+                print(f"  OK: No conflicts")
         
         return self.parser
 
 
-def example_expression_grammar():
+def get_grammar_from_user():
     """
-    Expression grammar with operator precedence.
+    Get grammar productions from user input.
     
-    E → E + T | T
-    T → T * F | F
-    F → ( E ) | id
+    Format: Each line should be "LHS -> RHS" where RHS symbols are space-separated
+    Example: 
+        E -> E + T | T
+        T -> T * F | F
+        F -> ( E ) | id
+    
+    Enter an empty line to finish.
     """
-    
-    productions = [
-        Production("E", ["E", "+", "T"], prod_id=1),
-        Production("E", ["T"], prod_id=2),
-        Production("T", ["T", "*", "F"], prod_id=3),
-        Production("T", ["F"], prod_id=4),
-        Production("F", ["(", "E", ")"], prod_id=5),
-        Production("F", ["id"], prod_id=6),
-    ]
-    
-    return productions
-
-
-def example_simple_grammar():
-    """
-    Simple grammar with epsilon production.
-    
-    S → A b
-    A → a | ε
-    """
-    
-    productions = [
-        Production("S", ["A", "b"], prod_id=1),
-        Production("A", ["a"], prod_id=2),
-        Production("A", [], prod_id=3),  # epsilon
-    ]
-    
-    return productions
-
-
-def example_bracket_grammar():
-    """
-    Balanced bracket grammar.
-    
-    S → ( S ) | ε
-    """
-    
-    productions = [
-        Production("S", ["(", "S", ")"], prod_id=1),
-        Production("S", [], prod_id=2),  # epsilon
-    ]
-    
-    return productions
-
-
-def run_example(name, productions, start, test_cases, verbose=False):
-    """
-    Run a complete example: build parser and test it.
-    
-    Args:
-        name: Example name
-        productions: List of Production objects
-        start: Start symbol
-        test_cases: List of (input_tokens, should_accept) tuples
-        verbose: Print debug info
-    """
-    
     print("\n" + "=" * 80)
-    print(f"Example: {name}")
+    print("GRAMMAR INPUT")
     print("=" * 80)
+    print("\nEnter grammar productions (format: LHS -> RHS | RHS | ...)")
+    print("Separate multiple productions with | symbol")
+    print("Enter empty line when done.\n")
     
-    # Print grammar
-    grammar = Grammar(productions, start)
-    print("\nGrammar:")
-    print(grammar)
+    productions = []
+    prod_id = 1
     
-    # Build parser
-    builder = LR1ParserBuilder(productions, start, verbose=False)
-    parser = builder.build()
-    
-    if verbose and builder.table_builder:
-        print("\n--- Parsing Tables ---")
-        builder.table_builder.print_tables()
-        builder.table_builder.print_conflicts()
-    
-    # Test cases
-    print("\nTest Cases:")
-    print("-" * 80)
-    
-    passed = 0
-    failed = 0
-    
-    for tokens, should_accept in test_cases:
-        input_str = ' '.join(tokens) if tokens else "(empty)"
-        tree, derivation, error = parser.parse(tokens if tokens else [])
+    while True:
+        line = input(f"Production {prod_id}: ").strip()
         
-        is_accepted = error is None
-        status = "✓" if is_accepted == should_accept else "✗"
+        if not line:
+            if not productions:
+                print("Error: Grammar cannot be empty!")
+                continue
+            break
         
-        print(f"\n{status} Input: {input_str}")
-        print(f"  Expected: {'accept' if should_accept else 'reject'}")
-        print(f"  Got: {'accept' if is_accepted else 'reject'}")
+        # Parse line: "LHS -> RHS1 | RHS2 | RHS3"
+        if "->" not in line:
+            print("Error: Use '->' to separate LHS and RHS")
+            continue
         
-        if error:
-            print(f"  Error: {error}")
+        lhs, rhs_part = line.split("->", 1)
+        lhs = lhs.strip()
         
-        if is_accepted:
-            print(f"  Parse tree:")
-            # Print tree with indentation
-            lines = _tree_to_lines(tree)
-            for line in lines:
-                print(f"    {line}")
+        if not lhs:
+            print("Error: LHS cannot be empty")
+            continue
         
-        if is_accepted == should_accept:
-            passed += 1
-        else:
-            failed += 1
+        # Split by | for alternatives
+        alternatives = rhs_part.split("|")
+        
+        for alt in alternatives:
+            alt = alt.strip()
+            
+            # Handle epsilon (ε or empty)
+            if alt.lower() == "epsilon" or alt == "ε" or alt == "":
+                rhs_symbols = []
+            else:
+                # Split RHS into symbols (space-separated)
+                rhs_symbols = alt.split()
+            
+            productions.append(Production(lhs, rhs_symbols, prod_id=prod_id))
+            prod_id += 1
     
-    print("\n" + "-" * 80)
-    print(f"Results: {passed} passed, {failed} failed")
+    return productions
+
+
+def get_start_symbol_from_user(productions):
+    """Get the start symbol from user."""
+    print("\nAvailable nonterminals:", ", ".join(set(p.lhs for p in productions)))
     
-    return passed, failed
+    while True:
+        start = input("Enter start symbol: ").strip()
+        if start and any(p.lhs == start for p in productions):
+            return start
+        print("Error: Invalid start symbol")
+
+
+def get_test_cases_from_user():
+    """Get test cases from user."""
+    print("\n" + "=" * 80)
+    print("TEST INPUT")
+    print("=" * 80)
+    print("\nEnter test inputs (space-separated tokens)")
+    print("Enter empty line when done.\n")
+    
+    test_cases = []
+    
+    while True:
+        line = input("Test input: ").strip()
+        
+        if not line:
+            break
+        
+        tokens = line.split()
+        test_cases.append(tokens)
+    
+    return test_cases
 
 
 def _tree_to_lines(node, indent=0):
@@ -203,80 +176,78 @@ def _tree_to_lines(node, indent=0):
         lines.extend(_tree_to_lines(child, indent + 1))
     return lines
 
+def get_verbose_choice():
+    """Ask user if they want verbose output."""
+    while True:
+        choice = input("Enable verbose output? (y/n): ").strip().lower()
+        if choice in ('y', 'n'):
+            if choice == 'y':
+                return True
+            return False
+        else:
+            print("Error: Please enter 'y' or 'n'.")
 
 # ============================================================================
 # Main: Run all examples
 # ============================================================================
 
+# ============================================================================
+# Main: User-driven parser
+# ============================================================================
+
 if __name__ == "__main__":
     print("\n" + "=" * 80)
-    print("LR(1) PARSER - COMPLETE EXAMPLES")
+    print("LR(1) PARSER - USER INPUT")
     print("=" * 80)
     
-    total_passed = 0
-    total_failed = 0
+    try:
+        # Get grammar from user
+        productions = get_grammar_from_user()
+        
+        # Get start symbol
+        start_symbol = get_start_symbol_from_user(productions)
+        
+        # Build parser
+        print("\nBuilding parser...")
+        verbose = get_verbose_choice()
+        builder = LR1ParserBuilder(productions, start_symbol, verbose)
+        parser = builder.build()
+        
+        # Get test cases from user
+        test_cases = get_test_cases_from_user()
+        
+        if test_cases:
+            # Test the parser
+            print("\n" + "=" * 80)
+            print("PARSING RESULTS")
+            print("=" * 80)
+            
+            for tokens in test_cases:
+                input_str = ' '.join(tokens) if tokens else "(empty)"
+                tree, derivation, error = parser.parse(tokens)
+                
+                is_accepted = error is None
+                status = "✓" if is_accepted else "✗"
+                
+                print(f"\n{status} Input: {input_str}")
+                
+                if error:
+                    print(f"  Error: {error}")
+                else:
+                    print(f"  Accepted!")
+                    if tree:
+                        print(f"  Parse tree:")
+                        lines = _tree_to_lines(tree)
+                        for line in lines:
+                            print(f"    {line}")
+        else:
+            print("\nNo test cases entered. Parser built successfully!")
+        
+        print("\n" + "=" * 80)
+        print("Complete!")
+        print("=" * 80)
     
-    # Example 1: Expression grammar
-    prods_1 = example_expression_grammar()
-    test_cases_1 = [
-        (["id"], True),
-        (["id", "+", "id"], True),
-        (["id", "+", "id", "+", "id"], True),
-        (["id", "*", "id"], True),
-        (["id", "+", "id", "*", "id"], True),
-        (["(", "id", ")"], True),
-        (["(", "id", "+", "id", ")"], True),
-        (["id", "+"], False),
-        (["(", "id"], False),
-    ]
-    
-    p, f = run_example("Expression Grammar (E → E + T | T, etc.)",
-                       prods_1, "E", test_cases_1, verbose=False)
-    total_passed += p
-    total_failed += f
-    
-    # Example 2: Simple grammar with epsilon
-    prods_2 = example_simple_grammar()
-    test_cases_2 = [
-        (["a", "b"], True),
-        (["b"], True),
-        (["a"], False),
-        (["b", "b"], False),
-    ]
-    
-    p, f = run_example("Simple Grammar (S → A b, A → a | ε)",
-                       prods_2, "S", test_cases_2, verbose=False)
-    total_passed += p
-    total_failed += f
-    
-    # Example 3: Bracket grammar with epsilon
-    prods_3 = example_bracket_grammar()
-    test_cases_3 = [
-        ([], True),
-        (["(", ")"], True),
-        (["(", "(", ")", ")"], True),
-        (["(", "(", ")", ")", ")"], False),
-        (["("], False),
-    ]
-    
-    p, f = run_example("Bracket Grammar (S → ( S ) | ε)",
-                       prods_3, "S", test_cases_3, verbose=False)
-    total_passed += p
-    total_failed += f
-    
-    # Summary
-    print("\n" + "=" * 80)
-    print("SUMMARY")
-    print("=" * 80)
-    print(f"Total passed: {total_passed}")
-    print(f"Total failed: {total_failed}")
-    if total_passed + total_failed > 0:
-        print(f"Success rate: {100*total_passed/(total_passed+total_failed):.1f}%")
-    
-    if total_failed == 0:
-        print("\n✓ All tests passed!")
-    else:
-        print(f"\n⚠ {total_failed} test(s) failed - Check parser construction")
-    
-    print("\n" + "=" * 80)
-    print("Complete!")
+    except Exception as e:
+        print(f"\nError: {e}")
+        import traceback
+        traceback.print_exc()

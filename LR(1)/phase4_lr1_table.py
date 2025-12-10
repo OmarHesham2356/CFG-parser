@@ -273,42 +273,42 @@ class LR1TableBuilder:
 # Example usage and validation
 # ============================================================================
 
-if __name__ == "__main__":
-    from phase2_first_follow import FirstFollowComputer
-    from phase3_lr1_items import LR1ItemSetBuilder
+# if __name__ == "__main__":
+#     from phase2_first_follow import FirstFollowComputer
+#     from phase3_lr1_items import LR1ItemSetBuilder
     
-    print("Testing LR(1) Table Construction")
-    print("=" * 80)
+#     print("Testing LR(1) Table Construction")
+#     print("=" * 80)
     
-    # Create grammar: E → E + T | T, T → id
-    productions = [
-        Production("E", ["E", "+", "T"], prod_id=1),
-        Production("E", ["T"], prod_id=2),
-        Production("T", ["id"], prod_id=3),
-    ]
+#     # Create grammar: E → E + T | T, T → id
+#     productions = [
+#         Production("E", ["E", "+", "T"], prod_id=1),
+#         Production("E", ["T"], prod_id=2),
+#         Production("T", ["id"], prod_id=3),
+#     ]
     
-    grammar = Grammar(productions, "E")
-    print(grammar)
+#     grammar = Grammar(productions, "E")
+#     print(grammar)
     
-    # Phase 2: FIRST/FOLLOW
-    ff = FirstFollowComputer(grammar)
-    ff.compute_first_sets()
-    ff.compute_follow_sets()
+#     # Phase 2: FIRST/FOLLOW
+#     ff = FirstFollowComputer(grammar)
+#     ff.compute_first_sets()
+#     ff.compute_follow_sets()
     
-    # Phase 3: Item sets
-    builder = LR1ItemSetBuilder(grammar, ff)
-    item_sets, goto_table = builder.build()
-    print(f"\nGenerated {len(item_sets)} states")
+#     # Phase 3: Item sets
+#     builder = LR1ItemSetBuilder(grammar, ff)
+#     item_sets, goto_table = builder.build()
+#     print(f"\nGenerated {len(item_sets)} states")
     
-    # Phase 4: Tables
-    table_builder = LR1TableBuilder(grammar, item_sets, goto_table)
-    action_table, goto_filled = table_builder.build()
+#     # Phase 4: Tables
+#     table_builder = LR1TableBuilder(grammar, item_sets, goto_table)
+#     action_table, goto_filled = table_builder.build()
     
-    print(f"ACTION table entries: {len(action_table)}")
-    print(f"GOTO table entries: {len(goto_filled)}")
+#     print(f"ACTION table entries: {len(action_table)}")
+#     print(f"GOTO table entries: {len(goto_filled)}")
     
-    table_builder.print_tables()
-    table_builder.print_conflicts()
+#     table_builder.print_tables()
+#     table_builder.print_conflicts()
     
-    print("\n" + "=" * 80)
-    print("Table construction complete!")
+#     print("\n" + "=" * 80)
+#     print("Table construction complete!")
