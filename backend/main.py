@@ -236,10 +236,7 @@ if __name__ == "__main__":
                 print(f"  Accepted!")
                 if tree:
                     print(f"  Parse tree:")
-                    lines = _tree_to_lines(tree)
-                    for line in lines:
-                        print(f"    {line}")
-        
+                    print(tree.get_tree_str())    # <--- USE THE NEW METHOD       
         print("\n" + "=" * 80)
         print("Complete!")
         print("=" * 80)

@@ -278,13 +278,63 @@ class ParseTreeNode:
             return 1
         return 1 + max((c.height() for c in self.children), default=0)
     
-    def pretty_print(self, indent: int = 0):
-        """Pretty print the parse tree"""
-        prefix = "  " * indent
-        print(prefix + str(self.symbol))
-        for child in self.children:
-            child.pretty_print(indent + 1)
+    def pretty_print(self, prefix: str = "", is_last: bool = True, is_root: bool = True):
+        """
+        Pretty print the parse tree using ASCII box-drawing characters.
+        """
+        # Define the visual connector for this node
+        if is_root:
+            connector = ""
+            new_prefix = ""
+        else:
+            connector = "└── " if is_last else "├── "
+            # Prepare the prefix for children of THIS node
+            # If this node is the last child, its children don't need a vertical bar
+            new_prefix = prefix + ("    " if is_last else "│   ")
+
+        # Print the current node
+        # We assume self.symbol is the string representation you want
+        print(f"{prefix}{connector}{self.symbol}")
+        
+        # Recursively print children
+        count = len(self.children)
+        for i, child in enumerate(self.children):
+            # Check if this child is the last one in the list
+            is_last_child = (i == count - 1)
+            # Pass the calculated prefix down
+            child.pretty_print(new_prefix, is_last_child, is_root=False)   
     
+    def get_tree_str(self, prefix: str = "", is_last: bool = True, is_root: bool = True) -> str:
+        """
+        Generates an ASCII tree string representation.
+        Example:
+        S
+        ├── A
+        └── B
+            └── c
+        """
+        # Determine connector and prefix
+        if is_root:
+            connector = ""
+            new_prefix = ""
+        else:
+            connector = "└── " if is_last else "├── "
+            new_prefix = prefix + ("    " if is_last else "│   ")
+
+        # Build the current line
+        result = f"{prefix}{connector}{self.symbol}\n"
+
+        # Recursively build children
+        count = len(self.children)
+        for i, child in enumerate(self.children):
+            is_last_child = (i == count - 1)
+            result += child.get_tree_str(new_prefix, is_last_child, is_root=False)
+            
+        return result
+
+    def pretty_print(self):
+        """Helper to print the generated string."""
+        print(self.get_tree_str())
     def __repr__(self) -> str:
         """Compact representation"""
         if self.is_leaf():
