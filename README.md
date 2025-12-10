@@ -1,6 +1,5 @@
 # CFG Parser
 
-````markdown
 # LR(1) Parser Generator 🌳
 
 A robust, interactive **Canonical LR(1) Parser Generator** built with Python and Streamlit. This tool accepts Context-Free Grammars (CFGs), computes First/Follow sets, builds LR(1) item sets, generates parsing tables with conflict detection, and visualizes the resulting parse tree.
@@ -30,7 +29,7 @@ CFG-parser/
 │   ├── app.py                # Streamlit Web Application
 │   └── visualize_tree.py     # Graphviz Visualization Logic
 └── requirements.txt          # Python dependencies
-````
+
 
 ## 🚀 Installation
 
