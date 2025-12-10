@@ -216,32 +216,29 @@ if __name__ == "__main__":
         # Get test cases from user
         test_cases = get_test_cases_from_user()
         
-        if test_cases:
-            # Test the parser
-            print("\n" + "=" * 80)
-            print("PARSING RESULTS")
-            print("=" * 80)
+        # Test the parser
+        print("\n" + "=" * 80)
+        print("PARSING RESULTS")
+        print("=" * 80)
+        
+        for tokens in test_cases:
+            input_str = ' '.join(tokens) if tokens else "(empty)"
+            tree, derivation, error = parser.parse(tokens)
             
-            for tokens in test_cases:
-                input_str = ' '.join(tokens) if tokens else "(empty)"
-                tree, derivation, error = parser.parse(tokens)
-                
-                is_accepted = error is None
-                status = "✓" if is_accepted else "✗"
-                
-                print(f"\n{status} Input: {input_str}")
-                
-                if error:
-                    print(f"  Error: {error}")
-                else:
-                    print(f"  Accepted!")
-                    if tree:
-                        print(f"  Parse tree:")
-                        lines = _tree_to_lines(tree)
-                        for line in lines:
-                            print(f"    {line}")
-        else:
-            print("\nNo test cases entered. Parser built successfully!")
+            is_accepted = error is None
+            status = "✓" if is_accepted else "✗"
+            
+            print(f"\n{status} Input: {input_str}")
+            
+            if error:
+                print(f"  Error: {error}")
+            else:
+                print(f"  Accepted!")
+                if tree:
+                    print(f"  Parse tree:")
+                    lines = _tree_to_lines(tree)
+                    for line in lines:
+                        print(f"    {line}")
         
         print("\n" + "=" * 80)
         print("Complete!")
