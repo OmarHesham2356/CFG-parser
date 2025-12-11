@@ -29,7 +29,7 @@ CFG-parser/
 │   ├── app.py                # Streamlit Web Application
 │   └── visualize_tree.py     # Graphviz Visualization Logic
 └── requirements.txt          # Python dependencies
-
+```
 
 ## 🚀 Installation
 
