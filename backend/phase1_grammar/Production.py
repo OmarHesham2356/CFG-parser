@@ -6,20 +6,12 @@ EPSILON = "ε"
 
 class Production:
     """
-    Grammar production rule: LHS -> RHS
-    
     Example:
         Production("E", ["E", "+", "T"], prod_id=1)
         Production("E", [], prod_id=2)  # epsilon production
     """
     
     def __init__(self, lhs: str, rhs: List[str], prod_id: Optional[int] = None):
-        """
-        Args:
-            lhs: Left-hand side (nonterminal)
-            rhs: Right-hand side (list of symbols, empty for epsilon)
-            prod_id: Unique production identifier
-        """
         if not isinstance(lhs, str) or not lhs:
             raise ValueError("LHS must be a non-empty string")
         if not isinstance(rhs, list):
@@ -30,7 +22,6 @@ class Production:
         self.prod_id = prod_id
     
     def is_epsilon(self) -> bool:
-        """Check if this is an epsilon production"""
         return len(self.rhs) == 0
     
     def __repr__(self) -> str:

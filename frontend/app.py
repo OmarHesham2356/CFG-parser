@@ -1,30 +1,17 @@
 import sys
 import os
 
-# -----------------------------------------------------------------------------
-# Path Setup: Add the 'backend' folder to sys.path
-# This allows us to import backend modules as if they were in the same folder,
-# and ensures the backend files can import each other without changes.
-# -----------------------------------------------------------------------------
 current_dir = os.path.dirname(os.path.abspath(__file__))
 backend_path = os.path.join(current_dir, '..', 'backend')
 sys.path.append(backend_path)
-# -----------------------------------------------------------------------------
 
 import streamlit as st
 import pandas as pd
-# Now these imports work automatically:
 from phase1_grammar import Production
 from main import LR1ParserBuilder
-# Import the visualization function from the sibling file in 'frontend'
 from visualize_tree import generate_tree_graph 
 
 st.set_page_config(page_title="LR(1) Parser Generator", layout="wide")
-# ... (Rest of your app.py code remains the same)
-
-
-st.set_page_config(page_title="LR(1) Parser Generator", layout="wide")
-
 st.title("LR(1) Parser Generator")
 st.markdown("### Interactive Parser for Context-Free Grammars")
 
@@ -34,8 +21,10 @@ with st.sidebar:
     st.info("Format: LHS -> RHS | ... (one rule per line)")
     
     # Default grammar (Dangling Else)
-    default_grammar = """S -> i C t S | i C t S e S | a
-C -> b"""
+    default_grammar = """E -> E + F | F
+    F -> F * G | G
+    G -> ( E ) | id
+    """
     
     grammar_input = st.text_area("Enter Productions:", value=default_grammar, height=200)
     
@@ -81,7 +70,7 @@ if build_btn or 'parser' in st.session_state:
         
         with tab1:
             st.subheader("Test Input")
-            test_input = st.text_input("Enter tokens (space separated):", value="i b t i b t a e a")
+            test_input = st.text_input("Enter tokens (space separated):", value="id + id * id")
             
             if test_input:
                 tokens = test_input.split()

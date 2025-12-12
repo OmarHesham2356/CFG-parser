@@ -6,8 +6,6 @@ END_OF_INPUT = "$"
 
 class Grammar:
     """
-    Context-Free Grammar (CFG) representation
-    
     Includes:
     - Original productions
     - Augmented production: S' → S (for LR(1) parsing)
@@ -19,10 +17,9 @@ class Grammar:
         """
         Args:
             productions: List of Production objects
-            start_symbol: The start nonterminal (e.g., "E")
+            start_symbol
             
-        Raises:
-            ValueError: If grammar is invalid
+        ValueError: If grammar is invalid
         """
         if not isinstance(productions, list) or not productions:
             raise ValueError("Must have at least one production")
@@ -41,15 +38,15 @@ class Grammar:
         self.augmented_start = "S'"
         augmented_prod = Production(self.augmented_start, [start_symbol], prod_id=0)
         self.augmented_productions = [augmented_prod] + productions
-        
-        # IMPORTANT: Add augmented start to nonterminals (FIXED BUG!)
+        # Add augmented start to nonterminals
         self.nonterminals.add(self.augmented_start)
         
-        # Validate grammar
+        # Validate
         self._validate()
     
     def _extract_symbols(self):
         """Extract terminals and nonterminals from productions"""
+        
         # Nonterminals: left-hand sides of productions
         for prod in self.productions:
             self.nonterminals.add(prod.lhs)
@@ -65,6 +62,7 @@ class Grammar:
     
     def _validate(self):
         """Validate grammar consistency"""
+        
         # Check that all referenced symbols are defined
         for prod in self.productions:
             for symbol in prod.rhs:
@@ -80,23 +78,20 @@ class Grammar:
             )
     
     def is_terminal(self, symbol: str) -> bool:
-        """Check if symbol is a terminal"""
         return symbol in self.terminals
     
     def is_nonterminal(self, symbol: str) -> bool:
-        """Check if symbol is a nonterminal"""
         return symbol in self.nonterminals
     
     def is_augmented_start(self, symbol: str) -> bool:
-        """Check if symbol is the augmented start symbol S'"""
         return symbol == self.augmented_start
     
     def get_productions_for(self, nonterminal: str) -> List[Production]:
-        """Get all productions with given LHS"""
         return [p for p in self.productions if p.lhs == nonterminal]
     
     def __repr__(self) -> str:
         """String representation of grammar"""
+        
         result = "Grammar:\n"
         for i, prod in enumerate(self.productions):
             result += f"  {i}: {prod}\n"

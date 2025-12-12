@@ -4,8 +4,6 @@ from phase1_grammar import Production, Grammar, EPSILON, END_OF_INPUT
 
 class FirstFollowComputer:
     """
-    Computes FIRST and FOLLOW sets for a context-free grammar.
-    
     FIRST(X):
     - For terminal 'a': FIRST(a) = {a}
     - For nonterminal A: terminals that can start strings from A
@@ -15,7 +13,7 @@ class FirstFollowComputer:
     - Terminals that can appear immediately after A in some sentential form
     - Always includes $ for the start symbol
     
-    These sets are essential for LR(1) parsing to compute lookaheads.
+    Essential for LR(1) parsing to compute lookaheads.
     """
     
     def __init__(self, grammar: Grammar, auto_compute: bool = True):
