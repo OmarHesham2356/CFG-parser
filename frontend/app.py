@@ -22,13 +22,13 @@ with st.sidebar:
     
     # Default grammar (Dangling Else)
     default_grammar = """E -> E + F | F
-    F -> F * G | G
-    G -> ( E ) | id
+F -> F * G | G
+G -> ( E ) | id
     """
     
     grammar_input = st.text_area("Enter Productions:", value=default_grammar, height=200)
     
-    start_symbol = st.text_input("Start Symbol:", value="S")
+    start_symbol = st.text_input("Start Symbol:", value="E")
     
     build_btn = st.button("Build Parser")
 
