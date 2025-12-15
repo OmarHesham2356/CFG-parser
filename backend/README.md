@@ -1,6 +1,4 @@
-Here’s a README‑style overview of each core file, with short code snippets you can paste directly.
 
-***
 
 ## Phase 1 – Core grammar structures
 
@@ -537,12 +535,7 @@ tree = parser.parse(["id"])
 tree.pretty_print()
 ```
 
-This should be enough to give readers a clear picture of each file plus concrete snippets they can reuse.
 
-[1](https://github.com/OmarHesham2356/CFG-parser)
-[2](https://www.geeksforgeeks.org/compiler-design/clr-parser-with-examples/)
-[3](https://www.cs.cmu.edu/~411/lectures/09-predictive.pdf)
-[4](https://www.geeksforgeeks.org/compiler-design/program-calculate-first-follow-sets-given-grammar/)
 [5](https://en.wikipedia.org/wiki/LR_parser)
 [6](https://serokell.io/blog/how-to-implement-lr1-parser)
 [7](https://en.wikipedia.org/wiki/Canonical_LR_parser)
