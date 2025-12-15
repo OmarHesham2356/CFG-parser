@@ -42,13 +42,6 @@ class LR1Item:
             return self.prod.rhs[self.dot]
         return None
     
-    def symbol_after_dot_pos(self, offset: int = 1) -> Optional[str]:
-        """Get symbol at offset positions after the dot"""
-        pos = self.dot + offset
-        if pos < len(self.prod.rhs):
-            return self.prod.rhs[pos]
-        return None
-    
     def __repr__(self) -> str:
         """String representation: [A → α • β, a]"""
         rhs = list(self.prod.rhs)
