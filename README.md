@@ -127,9 +127,4 @@ F -> ( E ) | id
 4. **Table Construction:** Populates the ACTION and GOTO tables. Detects conflicts here.
 5. **Parsing:** The engine processes input tokens using a stack-based shift-reduce approach.
 
-## 📄 License
 
-[MIT License](https://www.google.com/search?q=LICENSE)
-
-```
-```
