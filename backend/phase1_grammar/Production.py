@@ -10,7 +10,9 @@ class Production:
         Production("E", ["E", "+", "T"], prod_id=1)
         Production("E", [], prod_id=2)  # epsilon production
     """
-    
+    # lhs: nonterminal name as a string, e.g. "E".
+    # rhs: list of symbols (strings), e.g. ["E", "+", "T"]; an empty list represents ε.
+    # prod_id: optional numeric identifier (used in tables/debug).
     def __init__(self, lhs: str, rhs: List[str], prod_id: Optional[int] = None):
         if not isinstance(lhs, str) or not lhs:
             raise ValueError("LHS must be a non-empty string")
@@ -20,7 +22,9 @@ class Production:
         self.lhs = lhs
         self.rhs = rhs
         self.prod_id = prod_id
-    
+
+
+    # returns True if rhs is empty (ε‑production).
     def is_epsilon(self) -> bool:
         return len(self.rhs) == 0
     
