@@ -16,7 +16,21 @@ ___
 | **SLR(1)**       | Basic (FOLLOW sets: "what can follow this rule?") | Small      | Low       | Peeks 1 token simply; fixes some LR(0) issues but fails complex cases.                                           |
 | **LALR(1)**      | Good (merged LR(1) lookaheads)                    | Medium     | High      | Combines states for efficiency; powers Yacc/Bison tools; rare extra conflicts.                                   |
 | **CLR(1)/LR(1)** | Full (precise lookahead per state)                | Largest    | Strongest | Handles **all** deterministic CFGs perfectly; no approximations.                                                 
+### More Detailed Table
+| Feature                                 | ****SLR(1) Parser (Simple LR)****             | ****CLR(1) Parser (Canonical LR)****                       | ****LALR(1) Parser (Look-Ahead LR)****                       |
+| --------------------------------------- | --------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------ |
+| Parsing Table Size                      | Smallest (fewer states)                       | Largest (most states)                                      | Medium (states merged to reduce size)                        |
+| Grammar Handling                        | Limited (only simple grammars)                | Most powerful (handles almost all grammars)                | Nearly as powerful as CLR but compact                        |
+| Basis for Decisions                     | Uses FOLLOW sets for reductions               | Uses look-ahead symbols to make precise decisions          | Uses merged look-ahead symbols, similar to CLR but optimized |
+| Conflicts (Shift-Reduce, Reduce-Reduce) | More conflicts due to reliance on FOLLOW sets | Least conflicts because of look-ahead symbols              | May introduce reduce-reduce conflicts when merging states    |
+| Error Detection                         | Delayed (errors detected later)               | Delayed (similar to SLR)                                   | Similar to CLR, not always immediate                         |
+| Time and Space Complexity               | Low (fast but limited)                        | High (slow due to large tables but powerful)               | Medium (optimized for efficiency)                            |
+| Ease of Implementation                  | Easiest (simplest to build)                   | Most complex (large tables make it harder)                 | Easier than CLR but slightly more complex than SLR           |
+| Used In                                 | Simple parsers and educational tools          | Strong theoretical compilers (not widely used in practice) | Most real-world compilers (YACC, Bison, etc.)                |
+
 >**Power order**: LR(0) ⊂ SLR(1) ⊂ LALR(1) ⊆ LR(1). Each adds smarter peeking to resolve shift/reduce conflicts.
+>
+>					![[Pasted image 20251216201809.png]]
 
 ## Why Choose LR(1)?
 
@@ -83,7 +97,7 @@ I7: [T→•id,$/+]                         (after T/id entry)
 | 5    | [0 E 5 + 6 id 3] | $         | reduce 3 (T→id)  | T → id         |
 | 6    | [0 E 5 + 6 T 7]  | $         | reduce 1 (E→E+T) | E → E + T      |
 | 7    | [0 E 8]          | $         | accept           | S' → E         |
-
+_________________
 ______________________________________________________________________
 
 # Code Over View (Backend)
@@ -168,3 +182,81 @@ ParseTreeNode → Tree node for final output visualization
 | `__repr__()`                             | Compact representation: `(E (E id + id))`                        | `str`                  |
 | `__str__()`                              | Same as `__repr__()`                                             | `str`                  |
 >**Role**: Built during reduce actions (Phase 5). Final output shows complete parse tree + derivation for "id + id $".
+
+--------------
+## Phase2_First_Follow
+>Is the **“set calculator” phase**: it takes the `Grammar` from phase 1 and computes all FIRST and FOLLOW sets for its symbols. These sets are later used to build LR(1) items and parse tables (lookaheads when deciding reductions).
+
+### FirstFollowComputer.py
+**Class `FirstFollowComputer` computes and stores:**
+- **FIRST(X)** for every terminal, nonterminal, and sequence
+- **FOLLOW(A)** for every nonterminal
+
+>It uses the standard fixed‑point algorithms from compiler theory, starting from the augmented grammar (with S' and `$`) and iterating until no sets change. These sets are then used when building LR(1) items and when computing lookaheads in the parse table.
+#### Function Summary Table
+| Method                                 | What it does                                                                                                                           | Returns                             |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `__init__(grammar, auto_compute=True)` | Saves the grammar, creates empty FIRST/FOLLOW sets for all symbols, and (optionally) immediately computes them.                        | `FirstFollowComputer` object        |
+| `compute_first_sets(verbose=False)`    | Runs the iterative algorithm to fill FIRST sets for all symbols using the standard rules (terminals, ε-productions, and sequences).    | `None` (updates `self.first_sets`)  |
+| `first_of_symbol(symbol)`              | Internal helper: returns a copy of `FIRST(symbol)` from `self.first_sets`.                                                             | `Set[str]`                          |
+| `first_of_sequence(symbols)`           | Computes `FIRST(X₁X₂…Xₙ)` for a list of symbols, correctly propagating ε through the sequence.                                         | `Set[str]`                          |
+| `compute_follow_sets(verbose=False)`   | Runs the iterative algorithm to fill FOLLOW sets for all nonterminals using the standard rules (start symbol gets `$`, A → αBβ, etc.). | `None` (updates `self.follow_sets`) |
+| `first_of(symbol)`                     | Public wrapper to get `FIRST(symbol)` (just calls `first_of_symbol`).                                                                  | `Set[str]`                          |
+| `follow_of(nonterminal)`               | Public method to get `FOLLOW(nonterminal)` from `self.follow_sets`.                                                                    | `Set[str]`                          |
+| `print_sets()`                         | Nicely prints all FIRST and FOLLOW sets in a formatted way for debugging/report output.                                                | `None`                              |
+### Mini-Example
+```python
+Phase 1: Build grammar
+prods = [
+    Production("E", ["E", "+", "T"], prod_id=1),
+    Production("E", ["T"],          prod_id=2),
+    Production("T", ["id"],         prod_id=3),
+]
+grammar = Grammar(prods, start_symbol="E")   # adds S' → E, discovers terminals/nonterminals
+```
+
+```python
+ff = FirstFollowComputer(grammar, auto_compute=True)  # FIRST and FOLLOW computed
+print(ff.first_of("E"))      # → {'id'}
+print(ff.follow_of("E"))     # → {'$', '+'}
+print(ff.follow_of("T"))     # → {'$', '+'}
+ff.print_sets()              # pretty view of all sets
+
+```
+
+__________________________________________________
+## Phase3_LR1ItemSets
+>Is the **"LR(1) automaton builder" module** – the layer that turns your Phase 1 grammar and Phase 2 FIRST/FOLLOW sets into LR(1) item sets (states) and GOTO transitions, ready to become parse tables later.
+
+It **depends on**:
+- Phase 1: `Grammar`, `Production`, `LR1Item`
+- Phase 2: `FirstFollowComputer` (FIRST/FOLLOW used inside closure)
+
+```text
+Grammar          → Provides augmented productions, terminals, nonterminals
+FirstFollow      → Provides FIRST/FOLLOW for computing lookaheads
+LR1Item          → One LR(1) item: "[A → α • β, a]"
+LR1ItemSetBuilder → Builds all LR(1) item sets and GOTO graph
+```
+
+## LR1ItemSetBuilder.py
+
+> **`LR1ItemSetBuilder` builds the canonical collection of LR(1) item sets and the GOTO transitions between them (the LR(1) DFA).**
+> 
+> **Purpose**: Starting from the augmented start production, repeatedly apply `closure` and `goto` to discover all parser states. These states are later used to build the ACTION/GOTO parse table.
+
+**Relation to previous phases**:
+- Uses **Phase 1** `Grammar` to iterate over productions and know which symbols are terminals/nonterminals.
+- Uses **Phase 1** `LR1Item` to represent each item in a state.
+- Uses **Phase 2** `FirstFollowComputer` to compute lookahead symbols inside `closure` (via FIRST of sequences).
+#### Function Summary Table
+|Method / Function|Purpose|Relation to previous phases|Returns|
+|---|---|---|---|
+|`__init__(grammar, first_follow)`|Stores `Grammar` and `FirstFollowComputer`, sets up internal lists/dicts for states and edges.|Needs Phase 1 `Grammar`, Phase 2 `FirstFollowComputer`.|`LR1ItemSetBuilder`|
+|`initial_item_set()` / `build_start`|Creates initial item set `{ [S' → - S, $] }` and applies `closure` to get state I0.|Uses augmented start `S'` from `Grammar`, `LR1Item` for items.|Set of `LR1Item`|
+|`closure(items)`|Given a set of items, adds items for nonterminals after the dot with correct lookaheads, repeat.|Uses `Grammar.get_productions_for(A)` and FIRST from Phase 2.|Set of `LR1Item`|
+|`goto(items, symbol)`|From state `I` and symbol `X`, moves dot over `X` and applies `closure` → next state.|Uses `LR1Item.symbol_after_dot()` and `closure()`.|Set of `LR1Item`|
+|`build_canonical_collection()`|Repeatedly applies `goto` from every state on every symbol until no new states appear.|Uses `initial_item_set`, `closure`, `goto`; builds DFA graph.|(states, transitions)|
+|`get_states()` / property `states`|Returns list of all LR(1) item sets (I0, I1, …).|States are sets of Phase 1 `LR1Item`.|`List[Set[LR1Item]]`|
+|`get_transitions()` / `transitions`|Returns mapping (state_index, symbol) → next_state_index.|Used later to build ACTION/GOTO tables.|`Dict` / similar|
+>**Role**: Central Phase 3 object. It connects the **theory (FIRST/FOLLOW)** to **practical parser states**, and its output is the direct input for the parse-table-building phase.
