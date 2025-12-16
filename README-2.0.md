@@ -45,58 +45,125 @@ For grammar :
 			T → id
 Input: **id + id**
 
-### Step 0: Augment Grammar
+### Step 1: Augment Grammar
 
 ```text
-Full Grammar (augmented):
-
-0: S' ->  E        ($)
-1: E  ->  E  +  T  ($, +)
-2: E  ->  T        ($, +)
-3: T  ->  id       ($, +)
+0: S' ->  E
+1: E  ->  E  +  T
+2: E  ->  T
+3: T  ->  id
 ```
 >Add S' → E (new start, $ lookahead) to handle accept cleanly
 
-### Step 1: Canonical LR(1) Item Sets
+### 2) FIRST and FOLLOW
+```
+- FIRST(T) = { `id` }
+- FIRST(E) = { `id` }
+- FOLLOW(E) = { `$`, `+` }
+- FOLLOW(T) = { `$`, `+` }
+```
+>Justify lookaheads and reduce positions.
+
+### 3) Canonical LR(1) item sets (shape)
 
 ```text
-I0: [S'→•E,$] [E→•E+T,$/+] [E→•T,$/+] [T→•id,$/+]
-I1: [S'→E•,$]                           (accept)
-I2: [E→E•+T,$]                          (after E in 1)
-I3: [T→id•,$/+]                         (after id)
-I4: [E→T•,$/+]                          (after T in 2)
-I5: [E→E+•T,$] [T→•id,$]                (after + in 2)
-I6: [E→E+T•,$]                          (after T in 1)
-I7: [T→•id,$/+]                         (after T/id entry)
+I0: 
+	[S' → •E, $] 
+	[E → •E + T, $] 
+	[E → •T, $] 
+	[T → •id, $]
+
+I1: 
+	[S' → E•, $]
+
+I2: 
+	[E → E• + T, $]
+
+I3: 
+	[E → T•, $] 
+	[T → •id, $]
+
+I4: 
+	[T → id•, $]
+
+I5: 
+	[E → E + •T, $] 
+	[T → •id, $] 
+
+I6: 
+	[E → E + T•, $]
 ```
 
-### Step 2: Parse Table (Action/Goto)
+GOTOs (conceptual):
+- goto(0, E) = 1
+- goto(0, T) = 3
+- goto(0, id) = 4
+- goto(2, '+') = 5
+- goto(5, T) = 6
+- goto(3, id) = 4
 
-| State | id     | +      | E      | T      | $       |
-| ----- | ------ | ------ | ------ | ------ | ------- |
-| **0** | **g3** |        | **g1** | **g2** |         |
-| **1** |        |        |        |        | **acc** |
-| **2** |        | **s6** |        |        | **r2**  |
-| **3** |        | **r3** |        |        | **r3**  |
-| **4** | **s5** |        | **g7** |        |         |
-| **5** |        |        |        |        | **r3**  |
-| **6** |        |        |        |        | **r1**  |
-| **7** |        | **s6** |        |        | **r2**  |
-| **8** |        |        |        |        |         
+| State | E   | T   |
+| ----- | --- | --- |
+| 0     | 1   | 3   |
+| 1     |     |     |
+| 2     |     |     |
+| 3     |     |     |
+| 4     |     |     |
+| 5     |     | 6   |
+| 6     |     |     |
+
+ACTION table
+- In I0: `[T → - id, $]` → shift on `id` to state 4
+- In I3: `[T → - id, $]` → shift on `id` to 4
+- In I4: `[T → id- , $]` → reduce 3 (T→id) on `$` and `+` (from FOLLOW(T))
+- In I3: `[E → T- , $]` → reduce 2 (E→T) on `$` and `+`
+- In I2: `[E → E- + T, $]` → shift on `+` to 5
+- In I6: `[E → E + T- , $]` → reduce 1 (E→E+T) on `$` and `+`
+- In I1: `[S' → E- , $]` → accept on `$`
+
+| State | id  | +   | $   |
+| ----- | --- | --- | --- |
+| 0     | s4  |     |     |
+| 1     |     |     | acc |
+| 2     |     | s5  | r2  |
+| 3     | s4  | r2  | r2  |
+| 4     |     | r3  | r3  |
+| 5     | s4  |     |     |
+| 6     |     | r1  | r1  |
+
+Parse Table (Action/Goto)
+
+| State | E   | T   | id  | +   | $   |
+| ----- | --- | --- | --- | --- | --- |
+| **0** | g1  | g3  | s4  |     |     |
+| **1** |     |     |     |     | acc |
+| **2** |     |     |     | s5  | r2  |
+| **3** |     |     | s4  | r2  | r2  |
+| **4** |     |     |     | r3  | r3  |
+| **5** |     | 6   | s4  |     |     |
+| **6** |     |     |     | r1  | r1  |
+
 >N=shift N, rN=reduce N, gN=goto N, acc=accept
+
+Explanation of a couple rows:
+- **State 0**: only item with terminal after dot: `T→- id,$` → `id` gives shift 4.
+- **State 4**: item `T→id- ,$` is complete; FOLLOW(T) = `$,+` → reduce 3 on `$` and `+`.
+- **State 1**: item `[S'→E- ,$]` → accept on `$`.
+- **State 6**: complete `E→E+T` → reduce 1 on `$` and `+`.
+(This table is consistent with the usual bottom‑up parse for `E→E+T|T`.)
 
 ### Step 3: Full Parse Execution
 
-| Step | Stack            | Input     | Action           | Output (Deriv) |
-| ---- | ---------------- | --------- | ---------------- | -------------- |
-| 0    |                  | id + id $ | shift (s3)       |                |
-| 1    | [0 id 3]         | + id $    | reduce 3 (T→id)  | T → id         |
-| 2    | [0 T 2]          | + id $    | shift (s4)       | E → T          |
-| 3    | [0 E 5]          | + id $    | shift (s6)       |                |
-| 4    | [0 E 5 + 6]      | id $      | shift (s3)       |                |
-| 5    | [0 E 5 + 6 id 3] | $         | reduce 3 (T→id)  | T → id         |
-| 6    | [0 E 5 + 6 T 7]  | $         | reduce 1 (E→E+T) | E → E + T      |
-| 7    | [0 E 8]          | $         | accept           | S' → E         |
+| Step | Stack            | Input     | Action    |
+| ---- | ---------------- | --------- | --------- |
+| 0    |                  | id + id $ | s4        |
+| 1    | [0,id,4]         | + id $    | r3: T→id  |
+| 2    | [0,T,3]          | + id $    | r2: E→T   |
+| 3    | [0,E,2]          | + id $    | s5 (on +) |
+| 4    | [0,E,2,+,5]      | id $      | s4        |
+| 5    | [0,E,2,+,5,id,4] | $         | r3: T→id  |
+| 6    | [0,E,2,+,5,T,6]  | $         | r1: E→E+T |
+| 7    | [0,E,2]          | $         | acc       |
 _________________
 ______________________________________________________________________
 
