@@ -74,7 +74,7 @@ I7: [T→•id,$/+]                         (after T/id entry)
 
 | State | id     | +      | E      | T      | $       |
 | ----- | ------ | ------ | ------ | ------ | ------- |
-| **0** | **s5** |        | **g1** | **g2** |         |
+| **0** | **g3** |        | **g1** | **g2** |         |
 | **1** |        |        |        |        | **acc** |
 | **2** |        | **s6** |        |        | **r2**  |
 | **3** |        | **r3** |        |        | **r3**  |
@@ -204,7 +204,7 @@ ParseTreeNode → Tree node for final output visualization
 | `first_of(symbol)`                     | Public wrapper to get `FIRST(symbol)` (just calls `first_of_symbol`).                                                                  | `Set[str]`                          |
 | `follow_of(nonterminal)`               | Public method to get `FOLLOW(nonterminal)` from `self.follow_sets`.                                                                    | `Set[str]`                          |
 | `print_sets()`                         | Nicely prints all FIRST and FOLLOW sets in a formatted way for debugging/report output.                                                | `None`                              |
-### Mini-Example
+#### Mini-Example
 ```python
 Phase 1: Build grammar
 prods = [
@@ -239,8 +239,7 @@ LR1Item          → One LR(1) item: "[A → α • β, a]"
 LR1ItemSetBuilder → Builds all LR(1) item sets and GOTO graph
 ```
 
-## LR1ItemSetBuilder.py
-
+### LR1ItemSetBuilder.py
 > **`LR1ItemSetBuilder` builds the canonical collection of LR(1) item sets and the GOTO transitions between them (the LR(1) DFA).**
 > 
 > **Purpose**: Starting from the augmented start production, repeatedly apply `closure` and `goto` to discover all parser states. These states are later used to build the ACTION/GOTO parse table.
@@ -250,13 +249,145 @@ LR1ItemSetBuilder → Builds all LR(1) item sets and GOTO graph
 - Uses **Phase 1** `LR1Item` to represent each item in a state.
 - Uses **Phase 2** `FirstFollowComputer` to compute lookahead symbols inside `closure` (via FIRST of sequences).
 #### Function Summary Table
+| Method / Function                    | Purpose                                                                                          | Relation to previous phases                                    | Returns               |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- | --------------------- |
+| `__init__(grammar, first_follow)`    | Stores `Grammar` and `FirstFollowComputer`, sets up internal lists/dicts for states and edges.   | Needs Phase 1 `Grammar`, Phase 2 `FirstFollowComputer`.        | `LR1ItemSetBuilder`   |
+| `initial_item_set()` / `build_start` | Creates initial item set `{ [S' → - S, $] }` and applies `closure` to get state I0.              | Uses augmented start `S'` from `Grammar`, `LR1Item` for items. | Set of `LR1Item`      |
+| `closure(items)`                     | Given a set of items, adds items for nonterminals after the dot with correct lookaheads, repeat. | Uses `Grammar.get_productions_for(A)` and FIRST from Phase 2.  | Set of `LR1Item`      |
+| `goto(items, symbol)`                | From state `I` and symbol `X`, moves dot over `X` and applies `closure` → next state.            | Uses `LR1Item.symbol_after_dot()` and `closure()`.             | Set of `LR1Item`      |
+| `build_canonical_collection()`       | Repeatedly applies `goto` from every state on every symbol until no new states appear.           | Uses `initial_item_set`, `closure`, `goto`; builds DFA graph.  | (states, transitions) |
+| `get_states()` / property `states`   | Returns list of all LR(1) item sets (I0, I1, …).                                                 | States are sets of Phase 1 `LR1Item`.                          | `List[Set[LR1Item]]`  |
+| `get_transitions()` / `transitions`  | Returns mapping (state_index, symbol) → next_state_index.                                        | Used later to build ACTION/GOTO tables.                        | `Dict` / similar      |
+>**Role**: Central Phase 3 object. It connects the **theory (FIRST/FOLLOW)** to **practical parser states**, and its output is the direct input for the parse-table-building phase.
+
+____________
+## Phase4_LR1_Table
+> Is the **“table builder” module** – it turns Phase 3’s LR(1) item sets and GOTO graph into the actual **ACTION/GOTO parse table**, plus structured actions and conflict info.
+
+It **depends on**:
+- Phase 1: `Grammar`, `Production`, `LR1Item`
+- Phase 3: `LR1ItemSetBuilder` output (states + goto transitions)
+- Phase 2 indirectly (because LR(1) items already contain correct lookaheads)
+
+```
+LR1ItemSetBuilder → gives states (I0..In) and goto(i, X)
+LR1TableBuilder  → converts those into ACTION[i, a] and GOTO[i, A]
+ParseAction      → represents each cell (shift/reduce/accept/error)
+ConflictInfo     → records any conflicts while filling table
+```
+
+### LR1TableBuilder.py
+> **`LR1TableBuilder` constructs the LR(1) ACTION and GOTO tables from the LR(1) item sets and transitions.**
+> 
+> **Purpose**: For each state and each terminal/nonterminal, it decides: shift, reduce, accept, goto, or error, and detects conflicts.
+
+#### Function Summary Table
 |Method / Function|Purpose|Relation to previous phases|Returns|
 |---|---|---|---|
-|`__init__(grammar, first_follow)`|Stores `Grammar` and `FirstFollowComputer`, sets up internal lists/dicts for states and edges.|Needs Phase 1 `Grammar`, Phase 2 `FirstFollowComputer`.|`LR1ItemSetBuilder`|
-|`initial_item_set()` / `build_start`|Creates initial item set `{ [S' → - S, $] }` and applies `closure` to get state I0.|Uses augmented start `S'` from `Grammar`, `LR1Item` for items.|Set of `LR1Item`|
-|`closure(items)`|Given a set of items, adds items for nonterminals after the dot with correct lookaheads, repeat.|Uses `Grammar.get_productions_for(A)` and FIRST from Phase 2.|Set of `LR1Item`|
-|`goto(items, symbol)`|From state `I` and symbol `X`, moves dot over `X` and applies `closure` → next state.|Uses `LR1Item.symbol_after_dot()` and `closure()`.|Set of `LR1Item`|
-|`build_canonical_collection()`|Repeatedly applies `goto` from every state on every symbol until no new states appear.|Uses `initial_item_set`, `closure`, `goto`; builds DFA graph.|(states, transitions)|
-|`get_states()` / property `states`|Returns list of all LR(1) item sets (I0, I1, …).|States are sets of Phase 1 `LR1Item`.|`List[Set[LR1Item]]`|
-|`get_transitions()` / `transitions`|Returns mapping (state_index, symbol) → next_state_index.|Used later to build ACTION/GOTO tables.|`Dict` / similar|
->**Role**: Central Phase 3 object. It connects the **theory (FIRST/FOLLOW)** to **practical parser states**, and its output is the direct input for the parse-table-building phase.
+|`__init__(grammar, item_set_builder)`|Stores `Grammar` + `LR1ItemSetBuilder`, initializes empty ACTION/GOTO tables and conflicts.|Uses Phase 1 `Grammar`, Phase 3 states + goto transitions.|`LR1TableBuilder`|
+|`_init_tables()`|Creates table skeletons: rows for each state, columns for all terminals/nonterminals.|Uses `grammar.terminals` / `grammar.nonterminals`.|`None`|
+|`_add_shift_actions()` / inline logic|For each state i, for each `[A → α - a β, t]` with terminal `a`, sets `ACTION[i,a] = shift j`.|Uses LR(1) items from Phase 3 and `goto(i, a)` from item_set_builder.|`None`|
+|`_add_reduce_actions()` / inline logic|For each complete item `[A → α - , a]`, sets `ACTION[i,a] = reduce A→α` when A ≠ S'.|Uses LR(1) items, `Production` objects from Phase 1.|`None`|
+|`_add_accept_action()`|For `[S' → S - , $]`, sets `ACTION[i,$] = accept`.|Uses augmented start from `Grammar`.|`None`|
+|`_add_goto_entries()`|For each nonterminal A, if `goto(i, A) = j`, sets `GOTO[i,A] = j`.|Uses goto graph from `LR1ItemSetBuilder`.|`None`|
+|`_record_conflict(...)`|When a cell already has an action, records shift/reduce or reduce/reduce conflict.|Uses `ConflictInfo` class (see below).|`None`|
+|`build()`|High-level: calls all steps above in order; returns final ACTION/GOTO + conflict list.|Consumes all previous-phase outputs; used by executor in Phase 5.|`(action_table, goto_table)`|
+|`pretty_print()`|Prints the ACTION and GOTO tables in readable form.|For debugging/reporting.|`None`|
+>**Role**: This is the final “static” product before actual parsing. Phase 5 only reads ACTION/GOTO to drive the stack machine.
+
+### ParseAction.py
+> **`ParseAction` represents one cell in the ACTION table: shift to state, reduce by rule, accept, or error.**
+
+#### Function Table
+| Member / Method                                 | Purpose                                       | Returns         |
+| ----------------------------------------------- | --------------------------------------------- | --------------- |
+| `kind` (e.g. 'shift','reduce','accept','error') | Describes the type of action                  | `str`           |
+| `target_state` / `state`                        | For 'shift': which state to go to             | `int` or `None` |
+| `production`                                    | For 'reduce': which `Production` to reduce by | `Production`    |
+| `__repr__()` / `__str__()`                      | Human-readable like `s3`, `r2`, `acc`, `err`  | `str`           |
+>**Role**: Table entries aren’t raw strings; they are structured objects the parser engine will interpret.
+
+### ConflictInfo.py
+> **`ConflictInfo` stores details about conflicts found when building the LR(1) table (shift/reduce or reduce/reduce).**
+
+#### Function Summary Table
+| Field / Method    | Purpose                                 | Returns       |
+| ----------------- | --------------------------------------- | ------------- |
+| `state`           | In which LR state the conflict occurred | `int`         |
+| `symbol`          | On which input symbol (column)          | `str`         |
+| `existing_action` | The action already in the cell          | `ParseAction` |
+| `new_action`      | The new conflicting action              | `ParseAction` |
+| `__repr__()`      | Text description of the conflict        | `str`         |
+> **Role**: Lets you report or debug ambiguities in the grammar or construction.
+
+_____________
+## Phase5_LR1_Parser
+> Is the **“runtime engine” module** – it takes the ACTION/GOTO tables from Phase 4 and actually parses an input token stream, building a parse tree or throwing a parse error.
+
+It **depends on**:
+- Phase 1: `Grammar`, `Production`, `ParseTreeNode`
+- Phase 4: `action_table`, `goto_table`, `ParseAction`
+- Its own error type: `ParseError`
+
+```
+Grammar      → knows productions (for reduces)
+ParseTreeNode→ builds parse tree nodes during reduces
+LR1Table     → tells the parser what to shift/reduce/accept
+LR1Parser    → runs the stack machine over tokens
+ParseError   → describes errors when no valid action exists
+```
+
+### LR1Parser.py
+> **`LR1Parser` executes the LR(1) parsing algorithm using the precomputed tables, producing a parse tree or raising a parse error.**
+> 
+> **Purpose**: Implements the classic bottom‑up LR(1) stack machine: maintains a state stack and a parse‑tree stack, reads tokens, and for each step consults ACTION/GOTO to shift or reduce.
+
+#### Function Table
+|Method / Member|Purpose|Relation to previous phases|Returns|
+|---|---|---|---|
+|`__init__(grammar, action, goto)`|Stores `Grammar`, ACTION table, GOTO table, and prepares internal stacks.|Needs Phase 1 `Grammar`, Phase 4 tables.|`LR1Parser`|
+|`parse(tokens)`|Main entry: runs the LR(1) loop over input tokens, returns parse tree root on success or raises `ParseError`.|Uses `ParseAction` kinds; uses `ParseTreeNode` on reduce.|`ParseTreeNode`|
+|`_current_state()`|Reads top of state stack.|Internal helper.|`int`|
+|`_next_action(lookahead)`|Looks up `ACTION[state][lookahead]`.|Uses Phase 4 ACTION table.|`ParseAction`|
+|`_shift(action, lookahead)`|Pushes new state from `action.state` and creates terminal tree node.|Uses GOTO indirectly; uses `ParseTreeNode`.|`None`|
+|`_reduce(action)`|Pops|rhs|symbols/states, creates a `ParseTreeNode` for the LHS, and pushes GOTO on LHS.|
+|`_accept()`|Called when `ParseAction` is accept; returns root node.|Uses final tree stack state.|`ParseTreeNode`|
+|`_error(message, position, ...)`|Raises `ParseError` with context (state, symbol, maybe expected set).|Uses `ParseError` class.|`No return (exception)`|
+>**Role**: This is the final step that “runs” the parser you built. All the previous phases exist just to feed this machine.
+
+## ParseError.py
+> **`ParseError` is a custom exception representing a parsing failure.**
+
+#### Function Table
+| Field / Method | Purpose                                                  | Returns    |
+| -------------- | -------------------------------------------------------- | ---------- |
+| `message`      | Human‑readable error message                             | `str`      |
+| `position`     | Where in the token stream the error occurred (if stored) | e.g. `int` |
+| `state`        | Parser state when error occurred (optional)              | `int`      |
+| `__str__()`    | Pretty-prints the error                                  | `str`      
+> **Role**: Makes errors understandable when no valid ACTION entry exists (cell is empty or error).
+
+______________
+
+## Main
+
+## LR1ParserBuilder.py – Overall Role
+> **`LR1ParserBuilder` is the main orchestrator that wires all 5 phases together and returns a ready‑to‑use `LR1Parser` from a list of productions and a start symbol.**
+
+It **depends on**:
+- Phase 1: `Production`, `Grammar`
+- Phase 2: `FirstFollowComputer`
+- Phase 3: `LR1ItemSetBuilder`
+- Phase 4: `LR1TableBuilder`
+- Phase 5: `LR1Parser`
+#### Function Table
+| Method / Function                     | Purpose                                                               | Uses which phases?                | Returns               |
+| ------------------------------------- | --------------------------------------------------------------------- | --------------------------------- | --------------------- |
+| `__init__(productions, start_symbol)` | Stores raw productions + start symbol.                                | Phase 1 data (`Production` list). | `LR1ParserBuilder`    |
+| `_build_grammar()`                    | Creates `Grammar` (auto adds S' → S).                                 | Phase 1 `Grammar`.                | `Grammar`             |
+| `_build_first_follow(grammar)`        | Builds `FirstFollowComputer` for the grammar.                         | Phase 2.                          | `FirstFollowComputer` |
+| `_build_item_sets(grammar, ff)`       | Builds LR(1) item sets and goto graph via `LR1ItemSetBuilder`.        | Phase 3.                          | `LR1ItemSetBuilder`   |
+| `_build_tables(grammar, item_sets)`   | Uses `LR1TableBuilder` to create ACTION/GOTO tables.                  | Phase 4.                          | `(action, goto)`      |
+| `build_parser()`                      | Calls all steps in order, then constructs and returns an `LR1Parser`. | Combines Phases 1–5.              | `LR1Parser`           |
+|                                       |                                                                       |                                   |                       |
+> **Role**: This is what you would call from a “main program” to get a parser in one line.
